@@ -403,6 +403,7 @@ pub struct Format<F = Full, T = SystemTime> {
     pub(crate) timer: T,
     pub(crate) ansi: Option<bool>,
     pub(crate) display_timestamp: bool,
+    pub(crate) display_fmt_ctx: bool,
     pub(crate) display_target: bool,
     pub(crate) display_level: bool,
     pub(crate) display_thread_id: bool,
@@ -582,9 +583,7 @@ impl fmt::Debug for Writer<'_> {
             .field("is_ansi", &self.is_ansi)
             .finish()
     }
-}
-
-// === impl Format ===
+} // === impl Format ===
 
 impl Default for Format<Full, SystemTime> {
     fn default() -> Self {
@@ -599,6 +598,7 @@ impl Default for Format<Full, SystemTime> {
             display_thread_name: false,
             display_filename: false,
             display_line_number: false,
+            display_fmt_ctx: true,
         }
     }
 }
@@ -619,6 +619,7 @@ impl<F, T> Format<F, T> {
             display_thread_name: self.display_thread_name,
             display_filename: self.display_filename,
             display_line_number: self.display_line_number,
+            display_fmt_ctx: self.display_fmt_ctx,
         }
     }
 
@@ -658,6 +659,7 @@ impl<F, T> Format<F, T> {
             display_thread_name: self.display_thread_name,
             display_filename: true,
             display_line_number: true,
+            display_fmt_ctx: self.display_fmt_ctx,
         }
     }
 
@@ -689,6 +691,7 @@ impl<F, T> Format<F, T> {
             display_thread_name: self.display_thread_name,
             display_filename: self.display_filename,
             display_line_number: self.display_line_number,
+            display_fmt_ctx: self.display_fmt_ctx,
         }
     }
 
@@ -718,6 +721,7 @@ impl<F, T> Format<F, T> {
             display_thread_name: self.display_thread_name,
             display_filename: self.display_filename,
             display_line_number: self.display_line_number,
+            display_fmt_ctx: self.display_fmt_ctx,
         }
     }
 
@@ -734,6 +738,7 @@ impl<F, T> Format<F, T> {
             display_thread_name: self.display_thread_name,
             display_filename: self.display_filename,
             display_line_number: self.display_line_number,
+            display_fmt_ctx: self.display_fmt_ctx,
         }
     }
 
@@ -851,6 +856,14 @@ impl<F, T> Format<F, T> {
             writer.write_str("<unknown time>")?;
         }
         writer.write_char(' ')
+    }
+}
+
+impl<T> Format<Compact, T> {
+    /// ...
+    pub fn with_context(mut self, display_fmt_ctx: bool) -> Format<Compact, T> {
+        self.display_fmt_ctx = display_fmt_ctx;
+        self
     }
 }
 
@@ -1084,17 +1097,19 @@ where
             write!(writer, "{:0>2?} ", std::thread::current().id())?;
         }
 
-        let fmt_ctx = {
-            #[cfg(feature = "ansi")]
-            {
-                FmtCtx::new(ctx, event.parent(), writer.has_ansi_escapes())
-            }
-            #[cfg(not(feature = "ansi"))]
-            {
-                FmtCtx::new(&ctx, event.parent())
-            }
-        };
-        write!(writer, "{}", fmt_ctx)?;
+        if self.display_fmt_ctx {
+            let fmt_ctx = {
+                #[cfg(feature = "ansi")]
+                {
+                    FmtCtx::new(ctx, event.parent(), writer.has_ansi_escapes())
+                }
+                #[cfg(not(feature = "ansi"))]
+                {
+                    FmtCtx::new(&ctx, event.parent())
+                }
+            };
+            write!(writer, "{}", fmt_ctx)?;
+        }
 
         let dimmed = writer.dimmed();
 

@@ -861,7 +861,7 @@ impl<F, T> Format<F, T> {
 
 impl<T> Format<Compact, T> {
     /// ...
-    pub fn with_context(mut self, display_fmt_ctx: bool) -> Format<Compact, T> {
+    pub fn with_fmt_ctx(mut self, display_fmt_ctx: bool) -> Format<Compact, T> {
         self.display_fmt_ctx = display_fmt_ctx;
         self
     }

@@ -612,6 +612,21 @@ where
     }
 }
 
+impl<S, N, T, W> Layer<S, N, format::Format<format::Compact, T>, W> {
+    /// Sets whether or not the formatter will include format context in formatted events.
+    ///
+    /// See [`format::Compact`][super::format::Compact]
+    pub fn with_fmt_ctx(
+        self,
+        display_fmt_ctx: bool,
+    ) -> Layer<S, N, format::Format<format::Compact, T>, W> {
+        Layer {
+            fmt_event: self.fmt_event.with_fmt_ctx(display_fmt_ctx),
+            ..self
+        }
+    }
+}
+
 #[cfg(feature = "json")]
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 impl<S, T, W> Layer<S, format::JsonFields, format::Format<format::Json, T>, W> {
@@ -1631,8 +1646,7 @@ mod test {
             .with_timer(MockTime)
             .with_span_events(FmtSpan::ACTIVE);
 
-        let (reloadable_layer, reload_handle) =
-            crate::reload::Layer::new(inner_layer);
+        let (reloadable_layer, reload_handle) = crate::reload::Layer::new(inner_layer);
         let reload = reloadable_layer.with_subscriber(Registry::default());
 
         with_default(reload, || {
